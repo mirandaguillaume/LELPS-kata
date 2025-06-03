@@ -33,73 +33,91 @@ class TemplateManagerTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @test
-     * @dataProvider provideData
+     * @param ?Quote $quote
+     * @param ?User $user
+     * @param string $expectedSubject
+     * @param string $expectedContent
+     *
+     * @return void
+     *
+     * @dataProvider provideDatas
      */
-    public function test($id, $siteId, $destinationId, $dateQuoted)
+    public function testTemplateManager($quote, $user, $expectedSubject, $expectedContent)
     {
-        $expectedDestination = DestinationRepository::getInstance()->getById($destinationId);
-        $expectedUser = ApplicationContext::getInstance()->getCurrentUser();
-
-        $quote = new Quote($id, $siteId, $destinationId, $dateQuoted);
-
         $template = new Template(
             1,
-            'Votre livraison à [quote:destination_name]',
-            "
-Bonjour [user:first_name],
-
-Merci de nous avoir contacté pour votre livraison à [quote:destination_name].
-
-Bien cordialement,
-
-L'équipe de Shipper
-");
-
-        $message = $this->templateManager->getTemplateComputed(
-            $template,
-            [
-                'quote' => $quote
-            ]
+            '[user:first_name] [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summary_html]',
+            '[user:first_name] [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summary_html]'
         );
 
-        $this->assertEquals('Votre livraison à ' . $expectedDestination->countryName, $message->subject);
-        $this->assertEquals("
-Bonjour " . $expectedUser->firstname . ",
+        $message = $this->templateManager->getTemplateComputed($template, [
+            'quote' => $quote,
+            'user' => $user,
+        ]);
 
-Merci de nous avoir contacté pour votre livraison à " . $expectedDestination->countryName . ".
+        $this->assertEquals($expectedSubject, $message->subject);
+        $this->assertEquals($expectedContent, $message->content);
 
-Bien cordialement,
-
-L'équipe de Shipper
-", $message->content);
     }
 
-    public function provideData()
+    public function provideDatas()
     {
         $factory = Faker\Factory::create();
 
-        yield "With all datas" => [
-            'id' => $factory->randomNumber(),
-            'siteId' => $factory->randomNumber(),
-            'destinationId' => $factory->randomNumber(),
-            'dateQuoted' => $factory->date(),
+        $user = new User($factory->randomNumber(), $factory->firstName, $factory->lastName, $factory->email);
+        $quote = new Quote($factory->randomNumber(), $factory->randomNumber(), $factory->randomNumber(), $factory->date());
+        $destination = DestinationRepository::getInstance()->getById($quote->destinationId);
+
+        yield "With quote and user" => [
+            "quote" => $quote,
+            "user" => $user,
+            "expectedSubject" => implode(' ', [
+                ucfirst(mb_strtolower($user->firstname)) ,
+                $destination->countryName,
+                SiteRepository::getInstance()->getById($quote->siteId)->url . '/' . $destination->countryName . '/quote/' . $quote->id,
+                $quote->renderText(),
+                $quote->renderHtml()
+            ]),
+            "expectedContent" => implode(' ', [
+                ucfirst(mb_strtolower($user->firstname)) ,
+                $destination->countryName,
+                SiteRepository::getInstance()->getById($quote->siteId)->url . '/' . $destination->countryName . '/quote/' . $quote->id,
+                $quote->renderText(),
+                $quote->renderHtml()
+            ]),
         ];
-    }
 
-    public function testNoQuote()
-    {
-        $expectedUser = ApplicationContext::getInstance()->getCurrentUser();
+        yield "With quote and no user" => [
+            "quote" => $quote,
+            "user" => null,
+            "expectedSubject" => implode(' ', [
+                ucfirst(mb_strtolower(ApplicationContext::getInstance()->getCurrentUser()->firstname)) ,
+                $destination->countryName,
+                SiteRepository::getInstance()->getById($quote->siteId)->url . '/' . $destination->countryName . '/quote/' . $quote->id,
+                $quote->renderText(),
+                $quote->renderHtml()
+            ]),
+            "expectedContent" => implode(' ', [
+                ucfirst(mb_strtolower(ApplicationContext::getInstance()->getCurrentUser()->firstname)) ,
+                $destination->countryName,
+                SiteRepository::getInstance()->getById($quote->siteId)->url . '/' . $destination->countryName . '/quote/' . $quote->id,
+                $quote->renderText(),
+                $quote->renderHtml()
+            ]),
+        ];
 
-        $template = new Template(
-            1,
-            '[user:first_name] [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summaryHtml]',
-            '[user:first_name] [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summaryHtml]'
-        );
+        yield "With no quote and user" => [
+            "quote" => null,
+            "user" => $user,
+            "expectedSubject" => ucfirst(mb_strtolower($user->firstname)) . ' [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summary_html]',
+            "expectedContent" => ucfirst(mb_strtolower($user->firstname)) . ' [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summary_html]',
+        ];
 
-        $message = $this->templateManager->getTemplateComputed($template, ['quote' => null]);
-
-        $this->assertEquals($expectedUser->firstname . ' [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summaryHtml]', $message->subject);
-        $this->assertEquals($expectedUser->firstname . ' [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summaryHtml]', $message->content);
+        yield "With no quote and no user" => [
+            "quote" => null,
+            "user" => null,
+            "expectedSubject" => ucfirst(mb_strtolower(ApplicationContext::getInstance()->getCurrentUser()->firstname)) . ' [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summary_html]',
+            "expectedContent" => ucfirst(mb_strtolower(ApplicationContext::getInstance()->getCurrentUser()->firstname)) . ' [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summary_html]',
+        ];
     }
 }

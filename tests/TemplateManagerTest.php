@@ -15,11 +15,14 @@ require_once __DIR__ . '/../src/TemplateManager.php';
 
 class TemplateManagerTest extends PHPUnit_Framework_TestCase
 {
+    private $templateManager;
+
     /**
      * Init the mocks
      */
     public function setUp()
     {
+        $this->templateManager = new TemplateManager();
     }
 
     /**
@@ -35,8 +38,6 @@ class TemplateManagerTest extends PHPUnit_Framework_TestCase
      */
     public function test($id, $siteId, $destinationId, $dateQuoted)
     {
-        $faker = \Faker\Factory::create();
-
         $expectedDestination = DestinationRepository::getInstance()->getById($destinationId);
         $expectedUser = ApplicationContext::getInstance()->getCurrentUser();
 
@@ -55,9 +56,7 @@ Bien cordialement,
 L'équipe de Shipper
 ");
 
-        $templateManager = new TemplateManager();
-
-        $message = $templateManager->getTemplateComputed(
+        $message = $this->templateManager->getTemplateComputed(
             $template,
             [
                 'quote' => $quote
@@ -86,5 +85,21 @@ L'équipe de Shipper
             'destinationId' => $factory->randomNumber(),
             'dateQuoted' => $factory->date(),
         ];
+    }
+
+    public function testNoQuote()
+    {
+        $expectedUser = ApplicationContext::getInstance()->getCurrentUser();
+
+        $template = new Template(
+            1,
+            '[user:first_name] [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summaryHtml]',
+            '[user:first_name] [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summaryHtml]'
+        );
+
+        $message = $this->templateManager->getTemplateComputed($template, ['quote' => null]);
+
+        $this->assertEquals($expectedUser->firstname . ' [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summaryHtml]', $message->subject);
+        $this->assertEquals($expectedUser->firstname . ' [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summaryHtml]', $message->content);
     }
 }

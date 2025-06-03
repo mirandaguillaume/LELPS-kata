@@ -37,19 +37,16 @@ class TemplateManager
         if ($quote) {
             $destination = $this->destinationRepository->getById($quote->destinationId);
 
+            $replaceDatas = [
+                '[quote:summary]' => $quote->renderText(),
+                '[quote:summary_html]' => $quote->renderHtml(),
+                '[quote:destination_name]' => $destination->countryName,
+                '[quote:destination_link]' => $this->siteRepository->getById($quote->siteId)->url . '/' . $destination->countryName . '/quote/' . $quote->id,
+            ];
+
             $text = str_replace(
-                [
-                    '[quote:summary]',
-                    '[quote:summary_html]',
-                    '[quote:destination_name]',
-                    '[quote:destination_link]',
-                ],
-                [
-                    $quote->renderText(),
-                    $quote->renderHtml(),
-                    $destination->countryName,
-                    $this->siteRepository->getById($quote->siteId)->url . '/' . $destination->countryName . '/quote/' . $quote->id,
-                ],
+                array_keys($replaceDatas),
+                array_values($replaceDatas),
                 $text
             );
         }

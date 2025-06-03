@@ -31,16 +31,16 @@ class TemplateManagerTest extends PHPUnit_Framework_TestCase
 
     /**
      * @test
+     * @dataProvider provideData
      */
-    public function test()
+    public function test($id, $siteId, $destinationId, $dateQuoted)
     {
         $faker = \Faker\Factory::create();
 
-        $destinationId                  = $faker->randomNumber();
         $expectedDestination = DestinationRepository::getInstance()->getById($destinationId);
-        $expectedUser        = ApplicationContext::getInstance()->getCurrentUser();
+        $expectedUser = ApplicationContext::getInstance()->getCurrentUser();
 
-        $quote = new Quote($faker->randomNumber(), $faker->randomNumber(), $destinationId, $faker->date());
+        $quote = new Quote($id, $siteId, $destinationId, $dateQuoted);
 
         $template = new Template(
             1,
@@ -54,6 +54,7 @@ Bien cordialement,
 
 L'équipe de Shipper
 ");
+
         $templateManager = new TemplateManager();
 
         $message = $templateManager->getTemplateComputed(
@@ -73,5 +74,17 @@ Bien cordialement,
 
 L'équipe de Shipper
 ", $message->content);
+    }
+
+    public function provideData()
+    {
+        $factory = Faker\Factory::create();
+
+        yield "With all datas" => [
+            'id' => $factory->randomNumber(),
+            'siteId' => $factory->randomNumber(),
+            'destinationId' => $factory->randomNumber(),
+            'dateQuoted' => $factory->date(),
+        ];
     }
 }

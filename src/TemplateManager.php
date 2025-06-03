@@ -4,18 +4,28 @@ class TemplateManager
 {
     public function getTemplateComputed(Template $tpl, array $data)
     {
+        $APPLICATION_CONTEXT = ApplicationContext::getInstance();
+
+        $quote = (isset($data['quote']) and $data['quote'] instanceof Quote) ? $data['quote'] : null;
+
+        $user  = (isset($data['user'])  and ($data['user']  instanceof User))  ? $data['user']  : $APPLICATION_CONTEXT->getCurrentUser();
+
         $replaced = clone($tpl);
-        $replaced->subject = $this->computeText($replaced->subject, $data);
-        $replaced->content = $this->computeText($replaced->content, $data);
+        $replaced->subject = $this->computeText($replaced->subject, $quote, $user);
+        $replaced->content = $this->computeText($replaced->content, $quote, $user);
 
         return $replaced;
     }
 
-    private function computeText($text, array $data)
+    /**
+     * @param string $text
+     * @param Quote|null $quote
+     * @param User|null $user
+     *
+     * @return string
+     */
+    private function computeText($text, $quote, $user)
     {
-        $APPLICATION_CONTEXT = ApplicationContext::getInstance();
-
-        $quote = (isset($data['quote']) and $data['quote'] instanceof Quote) ? $data['quote'] : null;
 
         if ($quote)
         {
@@ -59,9 +69,8 @@ class TemplateManager
          * USER
          * [user:*]
          */
-        $_user  = (isset($data['user'])  and ($data['user']  instanceof User))  ? $data['user']  : $APPLICATION_CONTEXT->getCurrentUser();
-        if($_user) {
-            (strpos($text, '[user:first_name]') !== false) and $text = str_replace('[user:first_name]'       , ucfirst(mb_strtolower($_user->firstname)), $text);
+        if($user) {
+            (strpos($text, '[user:first_name]') !== false) and $text = str_replace('[user:first_name]'       , ucfirst(mb_strtolower($user->firstname)), $text);
         }
 
         return $text;

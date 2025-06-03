@@ -2,13 +2,23 @@
 
 class TemplateManager
 {
+    private $applicationContext;
+    private $quoteRepository;
+    private $siteRepository;
+    private $destinationRepository;
+
+    public function __construct()
+    {
+        $this->applicationContext = ApplicationContext::getInstance();
+        $this->quoteRepository = QuoteRepository::getInstance();
+        $this->siteRepository = SiteRepository::getInstance();
+        $this->destinationRepository = DestinationRepository::getInstance();
+    }
+
     public function getTemplateComputed(Template $tpl, array $data)
     {
-        $APPLICATION_CONTEXT = ApplicationContext::getInstance();
-
         $quote = (isset($data['quote']) and $data['quote'] instanceof Quote) ? $data['quote'] : null;
-
-        $user  = (isset($data['user'])  and ($data['user']  instanceof User))  ? $data['user']  : $APPLICATION_CONTEXT->getCurrentUser();
+        $user  = (isset($data['user'])  and ($data['user']  instanceof User))  ? $data['user']  : $this->applicationContext->getCurrentUser();
 
         $replaced = clone($tpl);
         $replaced->subject = $this->computeText($replaced->subject, $quote, $user);
@@ -29,13 +39,8 @@ class TemplateManager
 
         if ($quote)
         {
-            $_quoteFromRepository = QuoteRepository::getInstance()->getById($quote->id);
-            $usefulObject = SiteRepository::getInstance()->getById($quote->siteId);
-            $destinationOfQuote = DestinationRepository::getInstance()->getById($quote->destinationId);
-
-            if(strpos($text, '[quote:destination_link]') !== false){
-                $destination = DestinationRepository::getInstance()->getById($quote->destinationId);
-            }
+            $_quoteFromRepository = $this->quoteRepository->getById($quote->id);
+            $destination = DestinationRepository::getInstance()->getById($quote->destinationId);
 
             $containsSummaryHtml = strpos($text, '[quote:summary_html]');
             $containsSummary     = strpos($text, '[quote:summary]');
@@ -57,13 +62,15 @@ class TemplateManager
                 }
             }
 
-            (strpos($text, '[quote:destination_name]') !== false) and $text = str_replace('[quote:destination_name]',$destinationOfQuote->countryName,$text);
+            (strpos($text, '[quote:destination_name]') !== false) and $text = str_replace('[quote:destination_name]',$destination->countryName,$text);
         }
 
-        if (isset($destination))
+        if (strpos($text, '[quote:destination_link]') !== false) {
+            $usefulObject = $this->siteRepository->getById($quote->siteId);
             $text = str_replace('[quote:destination_link]', $usefulObject->url . '/' . $destination->countryName . '/quote/' . $_quoteFromRepository->id, $text);
-        else
+        } else {
             $text = str_replace('[quote:destination_link]', '', $text);
+        }
 
         /*
          * USER

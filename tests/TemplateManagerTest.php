@@ -72,14 +72,14 @@ class TemplateManagerTest extends PHPUnit_Framework_TestCase
             "quote" => $quote,
             "user" => $user,
             "expectedSubject" => implode(' ', [
-                ucfirst(mb_strtolower($user->firstname)) ,
+                $user->getCapitalizedFirstName(),
                 $destination->countryName,
                 SiteRepository::getInstance()->getById($quote->siteId)->url . '/' . $destination->countryName . '/quote/' . $quote->id,
                 $quote->renderText(),
                 $quote->renderHtml()
             ]),
             "expectedContent" => implode(' ', [
-                ucfirst(mb_strtolower($user->firstname)) ,
+                $user->getCapitalizedFirstName(),
                 $destination->countryName,
                 SiteRepository::getInstance()->getById($quote->siteId)->url . '/' . $destination->countryName . '/quote/' . $quote->id,
                 $quote->renderText(),
@@ -91,14 +91,14 @@ class TemplateManagerTest extends PHPUnit_Framework_TestCase
             "quote" => $quote,
             "user" => null,
             "expectedSubject" => implode(' ', [
-                ucfirst(mb_strtolower(ApplicationContext::getInstance()->getCurrentUser()->firstname)) ,
+                ApplicationContext::getInstance()->getCurrentUser()->getCapitalizedFirstName(),
                 $destination->countryName,
                 SiteRepository::getInstance()->getById($quote->siteId)->url . '/' . $destination->countryName . '/quote/' . $quote->id,
                 $quote->renderText(),
                 $quote->renderHtml()
             ]),
             "expectedContent" => implode(' ', [
-                ucfirst(mb_strtolower(ApplicationContext::getInstance()->getCurrentUser()->firstname)) ,
+                ApplicationContext::getInstance()->getCurrentUser()->getCapitalizedFirstName(),
                 $destination->countryName,
                 SiteRepository::getInstance()->getById($quote->siteId)->url . '/' . $destination->countryName . '/quote/' . $quote->id,
                 $quote->renderText(),
@@ -109,15 +109,15 @@ class TemplateManagerTest extends PHPUnit_Framework_TestCase
         yield "With no quote and user" => [
             "quote" => null,
             "user" => $user,
-            "expectedSubject" => ucfirst(mb_strtolower($user->firstname)) . ' [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summary_html]',
-            "expectedContent" => ucfirst(mb_strtolower($user->firstname)) . ' [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summary_html]',
+            "expectedSubject" => $user->getCapitalizedFirstName() . ' [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summary_html]',
+            "expectedContent" => $user->getCapitalizedFirstName() . ' [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summary_html]',
         ];
 
         yield "With no quote and no user" => [
             "quote" => null,
             "user" => null,
-            "expectedSubject" => ucfirst(mb_strtolower(ApplicationContext::getInstance()->getCurrentUser()->firstname)) . ' [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summary_html]',
-            "expectedContent" => ucfirst(mb_strtolower(ApplicationContext::getInstance()->getCurrentUser()->firstname)) . ' [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summary_html]',
+            "expectedSubject" => ApplicationContext::getInstance()->getCurrentUser()->getCapitalizedFirstName() . ' [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summary_html]',
+            "expectedContent" => ApplicationContext::getInstance()->getCurrentUser()->getCapitalizedFirstName() . ' [quote:destination_name] [quote:destination_link] [quote:summary] [quote:summary_html]',
         ];
     }
 }

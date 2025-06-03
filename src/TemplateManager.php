@@ -28,7 +28,7 @@ class TemplateManager
     /**
      * @param string     $text
      * @param Quote|null $quote
-     * @param User|null  $user
+     * @param User  $user
      *
      * @return string
      */
@@ -51,6 +51,6 @@ class TemplateManager
             );
         }
 
-        return str_replace('[user:first_name]', ucfirst(mb_strtolower($user->firstname)), $text);
+        return str_replace('[user:first_name]', $user->getCapitalizedFirstName(), $text);
     }
 }
